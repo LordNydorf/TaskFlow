@@ -1,24 +1,13 @@
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 
-export default function TodoInput(props) {
-  const {
-    todoValue,
-    setTodoValue,
-    priority,
-    setPriority,
-    handleAddTodo,
-    editingIndex,
-    handleCancelEdit,
-  } = props;
-
+export default function TodoInput({
+  todoValue,
+  setTodoValue,
+  priority,
+  setPriority,
+  handleAddTodo,
+}) {
   const inputRef = useRef(null);
-
-  // Focus input when entering edit mode
-  useEffect(() => {
-    if (editingIndex !== null && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [editingIndex]);
 
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
@@ -34,51 +23,59 @@ export default function TodoInput(props) {
     if (e.key === "Enter") {
       handleSubmit(e);
     } else if (e.key === "Escape") {
-      if (editingIndex !== null) {
-        handleCancelEdit();
-      } else {
-        setTodoValue("");
-      }
+      setTodoValue("");
+    }
+  };
+
+  const priorities = ["low", "medium", "high"];
+
+  const handlePriorityKeyDown = (e, currentPrio) => {
+    const currentIndex = priorities.indexOf(currentPrio);
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      e.preventDefault();
+      const nextPrio = priorities[(currentIndex + 1) % priorities.length];
+      setPriority(nextPrio);
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const prevPrio =
+        priorities[(currentIndex - 1 + priorities.length) % priorities.length];
+      setPriority(prevPrio);
     }
   };
 
   return (
-    <section className={`input-card ${editingIndex !== null ? "editing" : ""}`}>
-      {/* Edit Mode Notice */}
-      {editingIndex !== null && (
-        <div className="edit-mode-indicator">
-          <span>
-            <i className="fa-solid fa-pen" style={{ marginRight: "6px" }}></i>
-            Editing Task #{editingIndex + 1}
-          </span>
-          <button className="edit-cancel-btn" onClick={handleCancelEdit}>
-            <i className="fa-solid fa-xmark" style={{ marginRight: "4px" }}></i>
-            Cancel Edit (Esc)
-          </button>
-        </div>
-      )}
-
-      {/* Main Input Row */}
+    <section className="input-card" aria-label="Create a new task section">
+      {/* Main Input Form */}
       <form onSubmit={handleSubmit} className="input-form-row">
         <div className="input-field-wrapper">
-          <i className="fa-solid fa-plus-circle input-field-icon"></i>
+          <i
+            className="fa-solid fa-plus-circle input-field-icon"
+            aria-hidden="true"
+          />
+          <label htmlFor="new-task-input" className="sr-only">
+            Add a new task description
+          </label>
           <input
+            id="new-task-input"
             ref={inputRef}
             type="text"
             className="todo-input-field"
             value={todoValue}
             onChange={(e) => setTodoValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Add a new task... (e.g. Finish Q3 roadmap review)"
+            placeholder="Add a new task... (e.g. Review Q3 roadmap)"
+            aria-label="New task description"
+            aria-describedby="shortcut-tip-text"
           />
           {todoValue && (
             <button
               type="button"
               className="input-clear-btn"
               onClick={() => setTodoValue("")}
+              aria-label="Clear input text"
               title="Clear input"
             >
-              <i className="fa-solid fa-xmark"></i>
+              <i className="fa-solid fa-xmark" aria-hidden="true" />
             </button>
           )}
         </div>
@@ -87,52 +84,49 @@ export default function TodoInput(props) {
           type="submit"
           className="action-submit-btn"
           disabled={!todoValue.trim()}
+          aria-label="Add task to list"
         >
-          {editingIndex !== null ? (
-            <>
-              <i className="fa-solid fa-check"></i>
-              Save Changes
-            </>
-          ) : (
-            <>
-              <i className="fa-solid fa-arrow-right"></i>
-              Add Task
-            </>
-          )}
+          <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+          <span>Add Task</span>
         </button>
       </form>
 
       {/* Priority Selector and Shortcut Tip */}
       <div className="input-extras-row">
-        <div className="priority-selector">
-          <span className="priority-label">Priority:</span>
-          <div className="priority-options">
-            <button
-              type="button"
-              className={`priority-opt-btn low ${priority === "low" ? "active" : ""}`}
-              onClick={() => setPriority("low")}
-            >
-              Low
-            </button>
-            <button
-              type="button"
-              className={`priority-opt-btn medium ${priority === "medium" ? "active" : ""}`}
-              onClick={() => setPriority("medium")}
-            >
-              Medium
-            </button>
-            <button
-              type="button"
-              className={`priority-opt-btn high ${priority === "high" ? "active" : ""}`}
-              onClick={() => setPriority("high")}
-            >
-              High
-            </button>
+        <div className="priority-selector-wrapper">
+          <span id="priority-selector-label" className="priority-label">
+            Priority:
+          </span>
+          <div
+            className="priority-options"
+            role="radiogroup"
+            aria-labelledby="priority-selector-label"
+          >
+            {priorities.map((prio) => (
+              <button
+                key={prio}
+                type="button"
+                role="radio"
+                aria-checked={priority === prio}
+                tabIndex={priority === prio ? 0 : -1}
+                className={`priority-opt-btn ${prio} ${
+                  priority === prio ? "active" : ""
+                }`}
+                onClick={() => setPriority(prio)}
+                onKeyDown={(e) => handlePriorityKeyDown(e, prio)}
+                aria-label={`${prio.charAt(0).toUpperCase() + prio.slice(1)} priority`}
+              >
+                {prio.charAt(0).toUpperCase() + prio.slice(1)}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="shortcut-tip">
-          <span>Press <kbd>↵ Enter</kbd> to add</span>
+        <div id="shortcut-tip-text" className="shortcut-tip">
+          <i className="fa-regular fa-keyboard" aria-hidden="true" />
+          <span>
+            Press <kbd>↵ Enter</kbd> to add • <kbd>/</kbd> to search
+          </span>
         </div>
       </div>
     </section>
