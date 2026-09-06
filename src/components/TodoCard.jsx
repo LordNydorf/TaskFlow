@@ -1,6 +1,24 @@
 import { useState, useRef, useEffect } from "react";
 import SubtaskList from "./SubtaskList";
+import {
+  Check,
+  Edit3,
+  Trash2,
+  Clock,
+  Calendar,
+  AlertCircle,
+  GripVertical,
+  ChevronDown,
+  Tag as TagIcon,
+  MoreHorizontal,
+  Flame,
+  Zap,
+  Leaf,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
 
+// Format created timestamp
 function formatTimestamp(timestamp) {
   if (!timestamp) return "Recently";
   const date = new Date(timestamp);
@@ -14,8 +32,51 @@ function formatTimestamp(timestamp) {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+// Compute Due Date Status
+function getDueDateStatus(dueDateString) {
+  if (!dueDateString) return null;
+  const [year, month, day] = dueDateString.split("-").map(Number);
+  const target = new Date(year, month - 1, day);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const diffDays = Math.round((target - today) / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    const absDays = Math.abs(diffDays);
+    return {
+      type: "overdue",
+      label: absDays === 1 ? "Overdue (Yesterday)" : `Overdue (${absDays}d)`,
+      isOverdue: true,
+    };
+  }
+  if (diffDays === 0) {
+    return {
+      type: "today",
+      label: "Due Today",
+      isDueToday: true,
+    };
+  }
+  if (diffDays === 1) {
+    return {
+      type: "tomorrow",
+      label: "Due Tomorrow",
+      isDueSoon: true,
+    };
+  }
+  return {
+    type: "upcoming",
+    label: target.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    }),
+    isUpcoming: true,
+  };
+}
+
 export default function TodoCard({
   todo,
+  isSelected,
   isEditing,
   onStartEdit,
   onSaveEdit,
@@ -23,29 +84,42 @@ export default function TodoCard({
   onToggleComplete,
   onDelete,
   onChangePriority,
+  onMoveStep,
+  onFilterByTag,
   onAddSubtask,
   onToggleSubtask,
   onDeleteSubtask,
+  onDragStart,
+  onDragOver,
+  onDrop,
 }) {
   const isCompleted = Boolean(todo.completed);
   const priority = todo.priority || "medium";
   const subtasks = todo.subtasks || [];
+  const tags = Array.isArray(todo.tags) ? todo.tags : [];
   const completedSubtasksCount = subtasks.filter((s) => s.completed).length;
   const totalSubtasksCount = subtasks.length;
 
-  // Expand subtasks dropdown state
   const [isSubtasksExpanded, setIsSubtasksExpanded] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Local draft state for inline editing
   const [editText, setEditText] = useState(todo.text);
   const [editPriority, setEditPriority] = useState(priority);
+  const [editDueDate, setEditDueDate] = useState(todo.dueDate || "");
   const editInputRef = useRef(null);
+  const menuRef = useRef(null);
 
-  // Focus & sync when editing starts
+  // Due Date status
+  const dueStatus = getDueDateStatus(todo.dueDate);
+
+  // Sync draft on edit start
   useEffect(() => {
     if (isEditing) {
       setEditText(todo.text);
       setEditPriority(todo.priority || "medium");
+      setEditDueDate(todo.dueDate || "");
       setTimeout(() => {
         if (editInputRef.current) {
           editInputRef.current.focus();
@@ -53,12 +127,24 @@ export default function TodoCard({
         }
       }, 50);
     }
-  }, [isEditing, todo.text, todo.priority]);
+  }, [isEditing, todo.text, todo.priority, todo.dueDate]);
+
+  // Click outside to close accessible menu
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isMenuOpen]);
 
   const handleSave = (e) => {
     if (e) e.preventDefault();
     if (!editText.trim()) return;
-    onSaveEdit(todo.id, editText.trim(), editPriority);
+    onSaveEdit(todo.id, editText.trim(), editPriority, editDueDate || null);
   };
 
   const handleKeyDown = (e) => {
@@ -69,14 +155,7 @@ export default function TodoCard({
     }
   };
 
-  const fullDateString = todo.createdAt
-    ? new Date(todo.createdAt).toLocaleString(undefined, {
-        dateStyle: "medium",
-        timeStyle: "short",
-      })
-    : "Recently created";
-
-  // Cycle priority on badge click
+  // Priority cycle helper
   const handleCyclePriority = (e) => {
     e.stopPropagation();
     const cycle = { low: "medium", medium: "high", high: "low" };
@@ -86,11 +165,28 @@ export default function TodoCard({
     }
   };
 
+  const handleCardDragStart = (e) => {
+    setIsDragging(true);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", todo.id);
+    if (onDragStart) onDragStart(e, todo);
+  };
+
+  const handleCardDragEnd = () => {
+    setIsDragging(false);
+  };
+
   return (
     <li
+      id={`todo-card-${todo.id}`}
+      draggable={!isEditing}
+      onDragStart={handleCardDragStart}
+      onDragEnd={handleCardDragEnd}
+      onDragOver={(e) => onDragOver && onDragOver(e, todo.id)}
+      onDrop={(e) => onDrop && onDrop(e, todo.id)}
       className={`todo-card priority-${priority} ${isCompleted ? "completed" : ""} ${
         isEditing ? "is-editing" : ""
-      }`}
+      } ${isSelected ? "is-selected" : ""} ${isDragging ? "is-dragging" : ""}`}
     >
       {isEditing ? (
         /* Inline Edit Form */
@@ -112,38 +208,57 @@ export default function TodoCard({
           </div>
 
           <div className="inline-edit-controls">
-            <div
-              className="priority-selector inline-priority"
-              role="radiogroup"
-              aria-label="Select task priority"
-            >
-              <button
-                type="button"
-                role="radio"
-                aria-checked={editPriority === "low"}
-                className={`priority-opt-btn low ${editPriority === "low" ? "active" : ""}`}
-                onClick={() => setEditPriority("low")}
+            <div className="inline-edit-extras">
+              <div
+                className="priority-selector inline-priority"
+                role="radiogroup"
+                aria-label="Select task priority"
               >
-                Low
-              </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={editPriority === "medium"}
-                className={`priority-opt-btn medium ${editPriority === "medium" ? "active" : ""}`}
-                onClick={() => setEditPriority("medium")}
-              >
-                Medium
-              </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={editPriority === "high"}
-                className={`priority-opt-btn high ${editPriority === "high" ? "active" : ""}`}
-                onClick={() => setEditPriority("high")}
-              >
-                High
-              </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={editPriority === "low"}
+                  className={`priority-opt-btn low ${
+                    editPriority === "low" ? "active" : ""
+                  }`}
+                  onClick={() => setEditPriority("low")}
+                >
+                  Low
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={editPriority === "medium"}
+                  className={`priority-opt-btn medium ${
+                    editPriority === "medium" ? "active" : ""
+                  }`}
+                  onClick={() => setEditPriority("medium")}
+                >
+                  Medium
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={editPriority === "high"}
+                  className={`priority-opt-btn high ${
+                    editPriority === "high" ? "active" : ""
+                  }`}
+                  onClick={() => setEditPriority("high")}
+                >
+                  High
+                </button>
+              </div>
+
+              {/* Edit Due Date */}
+              <div className="inline-due-date-wrapper">
+                <input
+                  type="date"
+                  className="due-date-native-input small"
+                  value={editDueDate}
+                  onChange={(e) => setEditDueDate(e.target.value)}
+                  aria-label="Edit due date"
+                />
+              </div>
             </div>
 
             <div className="inline-edit-buttons">
@@ -170,7 +285,16 @@ export default function TodoCard({
         /* Regular Card View */
         <div className="todo-card-main-content">
           <div className="todo-card-top-row">
-            {/* Accessible Checkbox Toggle Button */}
+            {/* Drag Handle */}
+            <div
+              className="card-drag-handle"
+              title="Drag to reorder or move column"
+              aria-hidden="true"
+            >
+              <GripVertical size={14} />
+            </div>
+
+            {/* Accessible Checkbox */}
             <button
               type="button"
               role="checkbox"
@@ -184,9 +308,7 @@ export default function TodoCard({
               }
               title={isCompleted ? "Mark as active" : "Mark as completed"}
             >
-              {isCompleted && (
-                <i className="fa-solid fa-check check-icon" aria-hidden="true" />
-              )}
+              {isCompleted && <Check size={14} className="check-icon" />}
             </button>
 
             {/* Content Area */}
@@ -197,8 +319,9 @@ export default function TodoCard({
             >
               <span className="todo-text-line">{todo.text}</span>
 
+              {/* Meta row: Priority Badge, Due Date, Tags, Subtasks, Time */}
               <div className="todo-meta-line">
-                {/* Clickable Priority Badge to cycle/move */}
+                {/* Priority Badge */}
                 <button
                   type="button"
                   className={`priority-badge-pill ${priority}`}
@@ -210,7 +333,43 @@ export default function TodoCard({
                   {priority}
                 </button>
 
-                {/* Subtask Toggle Pill */}
+                {/* Due Date Badge with Urgency Indicator */}
+                {dueStatus && (
+                  <span
+                    className={`due-date-badge-pill ${dueStatus.type} ${
+                      isCompleted ? "completed-due" : ""
+                    }`}
+                    title={`Due: ${todo.dueDate}`}
+                  >
+                    {dueStatus.isOverdue ? (
+                      <AlertCircle size={12} aria-hidden="true" />
+                    ) : (
+                      <Calendar size={12} aria-hidden="true" />
+                    )}
+                    <span>{dueStatus.label}</span>
+                  </span>
+                )}
+
+                {/* Tags */}
+                {tags.length > 0 &&
+                  tags.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      className="task-tag-pill"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onFilterByTag) onFilterByTag(tag);
+                      }}
+                      title={`Filter by tag #${tag}`}
+                      aria-label={`Filter by #${tag}`}
+                    >
+                      <TagIcon size={10} aria-hidden="true" />
+                      <span>#{tag}</span>
+                    </button>
+                  ))}
+
+                {/* Subtasks Toggle */}
                 <button
                   type="button"
                   className={`subtasks-toggle-badge ${
@@ -225,37 +384,40 @@ export default function TodoCard({
                   }
                   title="Toggle subtasks checklist"
                 >
-                  <i className="fa-solid fa-list-check" aria-hidden="true" />
-                  <span>
+                  <span className="subtasks-badge-content">
                     {totalSubtasksCount > 0
                       ? `${completedSubtasksCount}/${totalSubtasksCount}`
                       : "+ Subtask"}
                   </span>
-                  <i
-                    className={`fa-solid fa-chevron-down subtasks-caret ${
+                  <ChevronDown
+                    size={12}
+                    className={`subtasks-caret ${
                       isSubtasksExpanded ? "open" : ""
                     }`}
                     aria-hidden="true"
                   />
                 </button>
 
-                <span className="todo-timestamp" title={`Created: ${fullDateString}`}>
-                  <i className="fa-regular fa-clock" aria-hidden="true" />
+                <span
+                  className="todo-timestamp"
+                  title={`Created: ${new Date(todo.createdAt).toLocaleString()}`}
+                >
+                  <Clock size={11} aria-hidden="true" />
                   {formatTimestamp(todo.createdAt)}
                 </span>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="todo-actions-group">
+            {/* Action Buttons & Accessible Menu */}
+            <div className="todo-actions-group" ref={menuRef}>
               <button
                 type="button"
                 className="action-icon-btn edit"
                 onClick={() => onStartEdit(todo.id)}
                 aria-label={`Edit task "${todo.text}"`}
-                title="Edit task"
+                title="Edit task (E)"
               >
-                <i className="fa-solid fa-pen-to-square" aria-hidden="true" />
+                <Edit3 size={15} aria-hidden="true" />
               </button>
 
               <button
@@ -263,14 +425,96 @@ export default function TodoCard({
                 className="action-icon-btn delete"
                 onClick={() => onDelete(todo.id)}
                 aria-label={`Delete task "${todo.text}"`}
-                title="Delete task"
+                title="Delete task (D)"
               >
-                <i className="fa-regular fa-trash-can" aria-hidden="true" />
+                <Trash2 size={15} aria-hidden="true" />
               </button>
+
+              {/* Accessible Reorder & Priority Menu (WCAG 2.2 Dragging movements alternative) */}
+              <button
+                type="button"
+                className="action-icon-btn more"
+                onClick={() => setIsMenuOpen((prev) => !prev)}
+                aria-expanded={isMenuOpen}
+                aria-label="More task actions"
+                title="More actions"
+              >
+                <MoreHorizontal size={15} aria-hidden="true" />
+              </button>
+
+              {isMenuOpen && (
+                <div className="card-context-menu" role="menu">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="menu-item"
+                    onClick={() => {
+                      if (onMoveStep) onMoveStep(todo.id, "up");
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    <ArrowUp size={13} aria-hidden="true" />
+                    Move Up
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="menu-item"
+                    onClick={() => {
+                      if (onMoveStep) onMoveStep(todo.id, "down");
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    <ArrowDown size={13} aria-hidden="true" />
+                    Move Down
+                  </button>
+                  <div className="menu-divider" />
+                  <span className="menu-header-label">Change Priority</span>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={`menu-item priority-opt low ${
+                      priority === "low" ? "selected" : ""
+                    }`}
+                    onClick={() => {
+                      onChangePriority(todo.id, "low");
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    <Leaf size={13} aria-hidden="true" /> Low Priority
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={`menu-item priority-opt medium ${
+                      priority === "medium" ? "selected" : ""
+                    }`}
+                    onClick={() => {
+                      onChangePriority(todo.id, "medium");
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    <Zap size={13} aria-hidden="true" /> Medium Priority
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={`menu-item priority-opt high ${
+                      priority === "high" ? "selected" : ""
+                    }`}
+                    onClick={() => {
+                      onChangePriority(todo.id, "high");
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    <Flame size={13} aria-hidden="true" /> High Priority
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Expandable Subtasks Checklist */}
+          {/* Subtasks Accordion */}
           {isSubtasksExpanded && (
             <SubtaskList
               todoId={todo.id}

@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { Check, X, Plus, ListChecks } from "lucide-react";
 
 export default function SubtaskList({
   todoId,
@@ -25,7 +26,8 @@ export default function SubtaskList({
 
   const completedCount = subtasks.filter((s) => s.completed).length;
   const totalCount = subtasks.length;
-  const percent = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
+  const percent =
+    totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
 
   return (
     <div className="subtasks-container" aria-label="Nested subtasks checklist">
@@ -34,7 +36,7 @@ export default function SubtaskList({
         <div className="subtask-progress-section">
           <div className="subtask-progress-header">
             <span className="subtask-progress-label">
-              <i className="fa-solid fa-list-check" aria-hidden="true" />
+              <ListChecks size={13} aria-hidden="true" />
               Subtasks ({completedCount}/{totalCount})
             </span>
             <span className="subtask-progress-pct">{percent}%</span>
@@ -67,7 +69,9 @@ export default function SubtaskList({
                 type="button"
                 role="checkbox"
                 aria-checked={Boolean(subtask.completed)}
-                className={`subtask-checkbox ${subtask.completed ? "checked" : ""}`}
+                className={`subtask-checkbox ${
+                  subtask.completed ? "checked" : ""
+                }`}
                 onClick={() => onToggleSubtask(todoId, subtask.id)}
                 aria-label={
                   subtask.completed
@@ -75,9 +79,7 @@ export default function SubtaskList({
                     : `Mark subtask "${subtask.text}" as completed`
                 }
               >
-                {subtask.completed && (
-                  <i className="fa-solid fa-check" aria-hidden="true" />
-                )}
+                {subtask.completed && <Check size={11} aria-hidden="true" />}
               </button>
 
               <span className="subtask-text">{subtask.text}</span>
@@ -89,7 +91,7 @@ export default function SubtaskList({
                 aria-label={`Delete subtask "${subtask.text}"`}
                 title="Delete subtask"
               >
-                <i className="fa-solid fa-xmark" aria-hidden="true" />
+                <X size={12} aria-hidden="true" />
               </button>
             </li>
           ))}
@@ -102,7 +104,7 @@ export default function SubtaskList({
           Add a subtask
         </label>
         <div className="add-subtask-wrapper">
-          <i className="fa-solid fa-plus add-subtask-icon" aria-hidden="true" />
+          <Plus className="add-subtask-icon" size={14} aria-hidden="true" />
           <input
             id={`add-subtask-input-${todoId}`}
             ref={inputRef}

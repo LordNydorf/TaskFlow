@@ -18,15 +18,18 @@
 
 ## ✨ Key Features
 
-- 🌑 **Obsidian & Zinc Dark Aesthetic**: Crafted with deep dark backgrounds (`#09090b`), translucent frosted glass cards, hairline borders, and emerald/cyan accent glows.
-- 🎯 **Priority Management**: Color-coded task tags (**High** / **Medium** / **Low**) with visual left-accent borders for instant urgency recognition.
-- 📊 **Real-time Progress Telemetry**: Live completion counter, percentage calculation, and dynamic glowing progress bar.
-- 🔍 **Instant Search & Filter Tabs**: Filter tasks effortlessly across **All**, **Active**, and **Done** tabs with instant text search.
-- ⚡ **Seamless Inline Editing**: Switch any task into active edit mode with pre-filled inputs and cancellation support.
-- 📦 **Zero-Friction Persistence**: Automatic browser `localStorage` syncing with backwards-compatible schema upgrades.
-- ⌨️ **Keyboard-First Workflow**: Rapid task entry and navigation with intuitive keyboard shortcuts (`Enter` to submit, `Esc` to clear/cancel).
-- 📱 **Fully Responsive**: Flawless layout adaptivity across mobile phones, tablets, and ultra-wide displays.
-- 🎨 **Custom Brand Favicon**: SVG vector browser icon featuring a high-contrast glowing geometric checkmark.
+- 🌑 **Obsidian & Zinc Dark Aesthetic**: Deep dark backgrounds (`#0B0E14`), translucent frosted glass cards, hairline borders, and emerald/cyan accent glows with full Light Mode support.
+- 🎯 **3-Column Kanban Priority Board & Single List View**: Switch smoothly between a 3-column Board (**High** / **Medium** / **Low**) and a streamlined single Feed.
+- 🔀 **Accessible Drag & Drop**: Native drag and drop to reorder tasks or move between priority columns, with single-pointer and keyboard alternatives (**WCAG 2.2 AA**).
+- 📅 **Due Dates & Deadlines**: Quick deadline presets (*Today*, *Tomorrow*, *This Weekend*, *Next Week*), custom dates, and visual urgency badges (**Overdue**, **Due Today**, **Upcoming**).
+- 🏷️ **Color-Coded #Tags**: Automatic hashtag extraction, tag badges, and interactive filter bar.
+- ⚡ **Command Palette (`Ctrl+K` / `Cmd+K`)**: Instant action launcher and task search with roving focus trap.
+- 📊 **Real-time Progress Telemetry & Celebration**: Completion counter, glowing progress bar, and celebratory confetti on 100% daily task completion.
+- 🔍 **Instant Search & Filter Tabs**: Multi-criteria filtering by text, subtasks, tags, and status (*All*, *Active*, *Done*).
+- 🗂️ **Multi-Format Export & Import**: Export as **JSON backup**, **CSV spreadsheet**, or **Markdown checklist** (Obsidian/Notion), with 1-click clipboard copy.
+- ⌨️ **Linear / Superhuman Keyboard Navigation**: `j`/`k` to navigate tasks, `x` to toggle, `e` to edit, `d` to delete, `1`/`2`/`3` to set priority.
+- 📦 **Zero-Friction Offline Persistence**: Resilient `localStorage` synchronization with backward-compatible schema normalization.
+- 🎨 **Tree-Shaken Vector SVG Icons**: Zero render-blocking FontAwesome CDN — powered natively by `lucide-react`.
 
 ---
 
@@ -36,9 +39,10 @@
 |---|---|
 | **Core Framework** | [React 18](https://react.dev/) |
 | **Build Tool & Bundler** | [Vite 6](https://vitejs.dev/) |
-| **Styling** | Vanilla CSS3 (Custom Design System, Tokens, Glassmorphism) |
+| **Styling** | Vanilla CSS3 (Custom Design System, Tokens, Glassmorphism, 8dp rhythm) |
 | **Typography** | [Plus Jakarta Sans](https://fonts.google.com/specimen/Plus+Jakarta+Sans) & [JetBrains Mono](https://fonts.google.com/specimen/JetBrains+Mono) |
-| **Icons** | [FontAwesome 6](https://fontawesome.com/) |
+| **Icons** | [Lucide React](https://lucide.dev/) (Tree-shaken SVG vector components) |
+| **Micro-Interactions** | [Canvas Confetti](https://www.npmjs.com/package/canvas-confetti) |
 | **Storage** | Browser `localStorage` API |
 
 ---
@@ -97,32 +101,50 @@ npm run preview
 
 | Shortcut | Action |
 |---|---|
+| <kbd>Ctrl + K</kbd> / <kbd>⌘ + K</kbd> | Open Command Palette (search actions & tasks) |
+| <kbd>/</kbd> | Focus task & tag search box |
+| <kbd>c</kbd> / <kbd>Alt + N</kbd> | Focus new task input field |
 | <kbd>↵ Enter</kbd> | Add new task or save edited task |
-| <kbd>Esc</kbd> | Clear input or cancel editing mode |
-| <kbd>Tab</kbd> | Navigate between inputs, priority tags, and action buttons |
+| <kbd>Esc</kbd> | Dismiss modals, clear input, or cancel editing |
+| <kbd>j</kbd> / <kbd>↓</kbd> | Navigate to next task card |
+| <kbd>k</kbd> / <kbd>↑</kbd> | Navigate to previous task card |
+| <kbd>x</kbd> / <kbd>Space</kbd> | Toggle completed state of selected task |
+| <kbd>e</kbd> | Edit selected task |
+| <kbd>d</kbd> | Delete selected task (with Undo toast) |
+| <kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd> | Set selected task priority (Low / Medium / High) |
+| <kbd>?</kbd> | Open Data Backup & Export modal |
 
 ---
 
 ## 📂 Project Structure
 
 ```text
-Todolist/
+TaskFlow/
 ├── public/
-│   ├── favicon.svg          # Custom vector browser icon
+│   ├── favicon.svg              # Custom vector browser icon
 │   └── vite.svg
 ├── src/
-│   ├── assets/              # Static assets & icons
 │   ├── components/
-│   │   ├── TodoCard.jsx     # Individual task card with checkbox, tags & actions
-│   │   ├── TodoInput.jsx    # Input card with priority selector & shortcuts
-│   │   └── TodoList.jsx     # Filter tabs, search bar, bulk actions & empty states
-│   ├── App.jsx              # Main application root & state management
-│   ├── index.css            # Obsidian design system & CSS styling tokens
-│   └── main.jsx             # React DOM entry point
-├── index.html               # HTML5 shell, web fonts & SEO metadata
-├── package.json             # Project dependencies & scripts
-├── vite.config.js           # Vite build configuration
-└── README.md                # Project documentation
+│   │   ├── BackupModal.jsx      # Multi-format export (JSON/CSV/MD), copy & import
+│   │   ├── CommandPalette.jsx   # Spotlight command bar (Ctrl+K)
+│   │   ├── SubtaskList.jsx       # Nested subtasks checklist with progress bar
+│   │   ├── ToastNotification.jsx# Undo toast with countdown progress bar
+│   │   ├── TodoCard.jsx         # Card with drag handle, due date, tags & actions
+│   │   ├── TodoInput.jsx        # Input card with due date presets & priority selector
+│   │   └── TodoList.jsx         # 3-col Kanban board, list view, tag filters & sort
+│   ├── hooks/
+│   │   ├── useKeyboardShortcuts.js # Linear-style keyboard shortcut engine
+│   │   ├── useLocalStorage.js   # Resilient localStorage synchronization
+│   │   ├── useTheme.js          # Dark/Light theme manager & system preference sync
+│   │   ├── useToast.js          # Notification and undo queue manager
+│   │   └── useTodos.js          # Centralized task management engine
+│   ├── App.jsx                  # Main application orchestrator & celebrations
+│   ├── index.css                # Obsidian glassmorphism tokens & CSS styles
+│   └── main.jsx                 # React DOM entry point
+├── index.html                   # HTML5 shell & optimized web fonts
+├── package.json                 # Project dependencies & scripts
+├── vite.config.js               # Vite build configuration
+└── README.md                    # Project documentation
 ```
 
 ---
@@ -130,11 +152,14 @@ Todolist/
 ## 🧭 Roadmap
 
 - [x] Modern Obsidian Dark design system with emerald accents
-- [x] Custom SVG browser favicon
-- [x] Priority categorization (High / Medium / Low)
-- [x] Live search and status filter tabs
-- [x] Progress analytics and completion percentage bar
-- [ ] Task reordering via Drag & Drop
-- [ ] Due dates and reminder tags
-- [ ] Export / Import tasks (JSON & CSV)
+- [x] Tree-shaken SVG icons (zero external CDN dependency)
+- [x] Modular React hooks architecture (`useTodos`, `useTheme`, `useToast`, `useKeyboardShortcuts`)
+- [x] Priority categorization & 3-column Kanban board
+- [x] Task reordering and column assignment via Drag & Drop
+- [x] Due dates with quick presets (*Today*, *Tomorrow*, *Next Week*) & Overdue badges
+- [x] Color-coded `#tags` categorization & tag filter bar
+- [x] Command Palette (`Ctrl+K` / `Cmd+K`)
+- [x] Multi-format export (JSON, CSV, Markdown, Clipboard Copy)
+- [x] Celebratory confetti on 100% completion milestone
+
 

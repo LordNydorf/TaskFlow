@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Trash2, CheckCircle2, Bell, AlertCircle, X } from "lucide-react";
 
 export default function ToastNotification({ toast, onClose }) {
   const [progress, setProgress] = useState(100);
@@ -27,6 +28,19 @@ export default function ToastNotification({ toast, onClose }) {
 
   if (!toast) return null;
 
+  const renderIcon = () => {
+    if (toast.type === "delete") {
+      return <Trash2 size={16} aria-hidden="true" />;
+    }
+    if (toast.type === "success") {
+      return <CheckCircle2 size={16} aria-hidden="true" />;
+    }
+    if (toast.type === "error") {
+      return <AlertCircle size={16} aria-hidden="true" />;
+    }
+    return <Bell size={16} aria-hidden="true" />;
+  };
+
   return (
     <aside
       className="toast-container"
@@ -36,16 +50,7 @@ export default function ToastNotification({ toast, onClose }) {
     >
       <div className={`toast-card ${toast.type || "info"}`}>
         <div className="toast-content">
-          <i
-            className={`toast-icon ${
-              toast.type === "delete"
-                ? "fa-solid fa-trash-can"
-                : toast.type === "success"
-                ? "fa-solid fa-circle-check"
-                : "fa-solid fa-bell"
-            }`}
-            aria-hidden="true"
-          />
+          <span className="toast-icon-wrap">{renderIcon()}</span>
           <span className="toast-message">{toast.message}</span>
         </div>
 
@@ -70,7 +75,7 @@ export default function ToastNotification({ toast, onClose }) {
             onClick={onClose}
             aria-label="Dismiss notification"
           >
-            <i className="fa-solid fa-xmark" aria-hidden="true" />
+            <X size={15} aria-hidden="true" />
           </button>
         </div>
 
