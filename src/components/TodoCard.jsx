@@ -16,6 +16,7 @@ import {
   Leaf,
   ArrowUp,
   ArrowDown,
+  ListChecks,
 } from "lucide-react";
 
 // Format created timestamp
@@ -76,6 +77,7 @@ function getDueDateStatus(dueDateString) {
 
 export default function TodoCard({
   todo,
+  viewMode = "board", // 'board' or 'list'
   isSelected,
   isEditing,
   onStartEdit,
@@ -282,133 +284,47 @@ export default function TodoCard({
           </div>
         </form>
       ) : (
-        /* Regular Card View */
+        /* Regular Card View - Clean & Spacious */
         <div className="todo-card-main-content">
-          <div className="todo-card-top-row">
-            {/* Drag Handle */}
-            <div
-              className="card-drag-handle"
-              title="Drag to reorder or move column"
-              aria-hidden="true"
-            >
-              <GripVertical size={14} />
+          <div className="todo-card-header-row">
+            <div className="todo-card-lead">
+              {/* Drag Handle */}
+              <div
+                className="card-drag-handle"
+                title="Drag to reorder or move column"
+                aria-hidden="true"
+              >
+                <GripVertical size={14} />
+              </div>
+
+              {/* Checkbox */}
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={isCompleted}
+                className={`custom-checkbox-btn ${isCompleted ? "checked" : ""}`}
+                onClick={() => onToggleComplete(todo.id)}
+                aria-label={
+                  isCompleted
+                    ? `Mark "${todo.text}" as active`
+                    : `Mark "${todo.text}" as completed`
+                }
+                title={isCompleted ? "Mark as active" : "Mark as completed"}
+              >
+                {isCompleted && <Check size={13} className="check-icon" />}
+              </button>
             </div>
 
-            {/* Accessible Checkbox */}
-            <button
-              type="button"
-              role="checkbox"
-              aria-checked={isCompleted}
-              className={`custom-checkbox-btn ${isCompleted ? "checked" : ""}`}
-              onClick={() => onToggleComplete(todo.id)}
-              aria-label={
-                isCompleted
-                  ? `Mark "${todo.text}" as active`
-                  : `Mark "${todo.text}" as completed`
-              }
-              title={isCompleted ? "Mark as active" : "Mark as completed"}
-            >
-              {isCompleted && <Check size={14} className="check-icon" />}
-            </button>
-
-            {/* Content Area */}
+            {/* Task Title (Takes 100% of available space) */}
             <div
-              className="todo-content-wrapper"
+              className="todo-title-area"
               onDoubleClick={() => onStartEdit(todo.id)}
               title="Double click to edit"
             >
               <span className="todo-text-line">{todo.text}</span>
-
-              {/* Meta row: Priority Badge, Due Date, Tags, Subtasks, Time */}
-              <div className="todo-meta-line">
-                {/* Priority Badge */}
-                <button
-                  type="button"
-                  className={`priority-badge-pill ${priority}`}
-                  onClick={handleCyclePriority}
-                  title={`Priority: ${priority}. Click to cycle priority.`}
-                  aria-label={`Priority: ${priority}. Click to change priority.`}
-                >
-                  <span className="priority-dot" aria-hidden="true" />
-                  {priority}
-                </button>
-
-                {/* Due Date Badge with Urgency Indicator */}
-                {dueStatus && (
-                  <span
-                    className={`due-date-badge-pill ${dueStatus.type} ${
-                      isCompleted ? "completed-due" : ""
-                    }`}
-                    title={`Due: ${todo.dueDate}`}
-                  >
-                    {dueStatus.isOverdue ? (
-                      <AlertCircle size={12} aria-hidden="true" />
-                    ) : (
-                      <Calendar size={12} aria-hidden="true" />
-                    )}
-                    <span>{dueStatus.label}</span>
-                  </span>
-                )}
-
-                {/* Tags */}
-                {tags.length > 0 &&
-                  tags.map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      className="task-tag-pill"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (onFilterByTag) onFilterByTag(tag);
-                      }}
-                      title={`Filter by tag #${tag}`}
-                      aria-label={`Filter by #${tag}`}
-                    >
-                      <TagIcon size={10} aria-hidden="true" />
-                      <span>#{tag}</span>
-                    </button>
-                  ))}
-
-                {/* Subtasks Toggle */}
-                <button
-                  type="button"
-                  className={`subtasks-toggle-badge ${
-                    totalSubtasksCount > 0 ? "has-subtasks" : ""
-                  } ${isSubtasksExpanded ? "expanded" : ""}`}
-                  onClick={() => setIsSubtasksExpanded((prev) => !prev)}
-                  aria-expanded={isSubtasksExpanded}
-                  aria-label={
-                    totalSubtasksCount > 0
-                      ? `${completedSubtasksCount} of ${totalSubtasksCount} subtasks completed. Click to toggle checklist.`
-                      : "Add subtasks"
-                  }
-                  title="Toggle subtasks checklist"
-                >
-                  <span className="subtasks-badge-content">
-                    {totalSubtasksCount > 0
-                      ? `${completedSubtasksCount}/${totalSubtasksCount}`
-                      : "+ Subtask"}
-                  </span>
-                  <ChevronDown
-                    size={12}
-                    className={`subtasks-caret ${
-                      isSubtasksExpanded ? "open" : ""
-                    }`}
-                    aria-hidden="true"
-                  />
-                </button>
-
-                <span
-                  className="todo-timestamp"
-                  title={`Created: ${new Date(todo.createdAt).toLocaleString()}`}
-                >
-                  <Clock size={11} aria-hidden="true" />
-                  {formatTimestamp(todo.createdAt)}
-                </span>
-              </div>
             </div>
 
-            {/* Action Buttons & Accessible Menu */}
+            {/* Action Buttons (Hover-Revealed) */}
             <div className="todo-actions-group" ref={menuRef}>
               <button
                 type="button"
@@ -417,7 +333,7 @@ export default function TodoCard({
                 aria-label={`Edit task "${todo.text}"`}
                 title="Edit task (E)"
               >
-                <Edit3 size={15} aria-hidden="true" />
+                <Edit3 size={14} aria-hidden="true" />
               </button>
 
               <button
@@ -427,10 +343,10 @@ export default function TodoCard({
                 aria-label={`Delete task "${todo.text}"`}
                 title="Delete task (D)"
               >
-                <Trash2 size={15} aria-hidden="true" />
+                <Trash2 size={14} aria-hidden="true" />
               </button>
 
-              {/* Accessible Reorder & Priority Menu (WCAG 2.2 Dragging movements alternative) */}
+              {/* Accessible Reorder & Priority Menu */}
               <button
                 type="button"
                 className="action-icon-btn more"
@@ -439,7 +355,7 @@ export default function TodoCard({
                 aria-label="More task actions"
                 title="More actions"
               >
-                <MoreHorizontal size={15} aria-hidden="true" />
+                <MoreHorizontal size={14} aria-hidden="true" />
               </button>
 
               {isMenuOpen && (
@@ -512,6 +428,107 @@ export default function TodoCard({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Clean Horizontal Metadata Footer */}
+          <div className="todo-card-footer-meta">
+            {/* Show priority pill only in List view (in Board view, the column defines it) */}
+            {viewMode === "list" && (
+              <button
+                type="button"
+                className={`priority-badge-pill ${priority}`}
+                onClick={handleCyclePriority}
+                title={`Priority: ${priority}. Click to cycle.`}
+                aria-label={`Priority: ${priority}`}
+              >
+                <span className="priority-dot" aria-hidden="true" />
+                {priority}
+              </button>
+            )}
+
+            {/* Due Date Badge */}
+            {dueStatus && (
+              <span
+                className={`due-date-badge-pill ${dueStatus.type} ${
+                  isCompleted ? "completed-due" : ""
+                }`}
+                title={`Due: ${todo.dueDate}`}
+              >
+                {dueStatus.isOverdue ? (
+                  <AlertCircle size={11} aria-hidden="true" />
+                ) : (
+                  <Calendar size={11} aria-hidden="true" />
+                )}
+                <span>{dueStatus.label}</span>
+              </span>
+            )}
+
+            {/* Tag Pills */}
+            {tags.length > 0 &&
+              tags.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  className="task-tag-pill"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onFilterByTag) onFilterByTag(tag);
+                  }}
+                  title={`Filter by tag #${tag}`}
+                  aria-label={`Filter by #${tag}`}
+                >
+                  <TagIcon size={10} aria-hidden="true" />
+                  <span>#{tag}</span>
+                </button>
+              ))}
+
+            {/* Subtasks Toggle Pill */}
+            {(totalSubtasksCount > 0 || isSubtasksExpanded) && (
+              <button
+                type="button"
+                className={`subtasks-toggle-badge ${
+                  totalSubtasksCount > 0 ? "has-subtasks" : ""
+                } ${isSubtasksExpanded ? "expanded" : ""}`}
+                onClick={() => setIsSubtasksExpanded((prev) => !prev)}
+                aria-expanded={isSubtasksExpanded}
+                aria-label={`${completedSubtasksCount} of ${totalSubtasksCount} subtasks completed`}
+                title="Toggle subtasks checklist"
+              >
+                <ListChecks size={11} aria-hidden="true" />
+                <span>
+                  {completedSubtasksCount}/{totalSubtasksCount}
+                </span>
+                <ChevronDown
+                  size={11}
+                  className={`subtasks-caret ${
+                    isSubtasksExpanded ? "open" : ""
+                  }`}
+                  aria-hidden="true"
+                />
+              </button>
+            )}
+
+            {/* Quick Add Subtask Trigger (when 0 subtasks exist) */}
+            {totalSubtasksCount === 0 && !isSubtasksExpanded && (
+              <button
+                type="button"
+                className="add-subtask-quick-trigger"
+                onClick={() => setIsSubtasksExpanded(true)}
+                title="Add a subtask to this card"
+                aria-label="Add subtask"
+              >
+                + Subtask
+              </button>
+            )}
+
+            {/* Relative Timestamp */}
+            <span
+              className="todo-timestamp"
+              title={`Created: ${new Date(todo.createdAt).toLocaleString()}`}
+            >
+              <Clock size={10} aria-hidden="true" />
+              {formatTimestamp(todo.createdAt)}
+            </span>
           </div>
 
           {/* Subtasks Accordion */}

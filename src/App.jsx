@@ -4,10 +4,10 @@ import {
   Calendar as CalendarIcon,
   Sun,
   Moon,
-  PieChart,
   CloudDownload,
   Command,
   Sparkles,
+  CheckCircle2,
 } from "lucide-react";
 
 import { useTheme } from "./hooks/useTheme";
@@ -170,7 +170,7 @@ function App() {
         onImportTodos={importTodos}
       />
 
-      {/* App Header & Branding */}
+      {/* App Header with Integrated Progress Strip */}
       <header className="app-header" role="banner">
         <div className="brand-section">
           <div className="brand-logo-title">
@@ -178,8 +178,8 @@ function App() {
               src="/favicon.svg"
               alt="TaskFlow Logo"
               className="brand-icon-img"
-              width="44"
-              height="44"
+              width="40"
+              height="40"
             />
             <div className="brand-info">
               <h1>TaskFlow</h1>
@@ -188,7 +188,7 @@ function App() {
           </div>
 
           <div className="header-controls">
-            {/* Command Palette Shortcut Trigger */}
+            {/* Command Palette Trigger */}
             <button
               type="button"
               className="command-trigger-btn"
@@ -196,18 +196,18 @@ function App() {
               aria-label="Open Command Palette (Ctrl+K)"
               title="Open Command Palette (Ctrl+K)"
             >
-              <Command size={14} aria-hidden="true" />
+              <Command size={13} aria-hidden="true" />
               <span className="command-trigger-text">Commands</span>
               <kbd className="command-key-badge">Ctrl K</kbd>
             </button>
 
             {/* Date Pill */}
             <div className="date-pill" aria-label={`Today is ${todayFormatted}`}>
-              <CalendarIcon size={14} aria-hidden="true" />
+              <CalendarIcon size={13} aria-hidden="true" />
               <span>{todayFormatted}</span>
             </div>
 
-            {/* Theme Toggle Button */}
+            {/* Theme Toggle */}
             <button
               type="button"
               className="theme-toggle-btn"
@@ -216,65 +216,47 @@ function App() {
               title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
             >
               {theme === "dark" ? (
-                <Sun size={18} aria-hidden="true" />
+                <Sun size={17} aria-hidden="true" />
               ) : (
-                <Moon size={18} aria-hidden="true" />
+                <Moon size={17} aria-hidden="true" />
               )}
             </button>
           </div>
         </div>
 
-        {/* Productivity Progress Bar & Stats */}
+        {/* Integrated Slim Progress Strip */}
         {totalCount > 0 && (
-          <div
-            className="stats-card"
-            role="region"
-            aria-label="Daily Progress Statistics"
-          >
-            <div className="stats-header">
-              <span className="stats-title">
-                <PieChart
-                  size={16}
-                  style={{ color: "var(--accent-emerald)" }}
-                  aria-hidden="true"
-                />
-                Today&apos;s Progress
+          <div className="header-progress-strip" role="region" aria-label="Daily Progress">
+            <div className="progress-strip-top">
+              <span className="progress-strip-status">
+                {completionPercentage === 100 ? (
+                  <span className="all-cleared-badge">
+                    <Sparkles size={13} aria-hidden="true" /> All tasks cleared! 🚀
+                  </span>
+                ) : (
+                  <>
+                    <CheckCircle2 size={13} style={{ color: "var(--accent-emerald)" }} aria-hidden="true" />
+                    <strong>{completedCount}</strong> of <strong>{totalCount}</strong> completed
+                  </>
+                )}
               </span>
-              <span
-                className="stats-badge"
-                aria-label={`${completedCount} of ${totalCount} tasks completed`}
-              >
-                {completedCount}/{totalCount} Completed ({completionPercentage}%)
+
+              <span className="progress-strip-percent">
+                {completionPercentage}% complete {activeCount > 0 && `• ${activeCount} remaining`}
               </span>
             </div>
 
-            {/* Semantic Progress Bar */}
             <div
-              className="progress-bar-track"
+              className="progress-strip-track"
               role="progressbar"
               aria-valuenow={completionPercentage}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label="Task completion progress"
             >
               <div
-                className="progress-bar-fill"
+                className="progress-strip-fill"
                 style={{ width: `${completionPercentage}%` }}
               />
-            </div>
-
-            <div className="stats-footer">
-              <span>
-                {completionPercentage === 100 ? (
-                  <span className="stats-all-done">
-                    <Sparkles size={14} aria-hidden="true" />
-                    Outstanding! You cleared all tasks 🚀
-                  </span>
-                ) : (
-                  `${activeCount} task${activeCount === 1 ? "" : "s"} remaining`
-                )}
-              </span>
-              <span>{completionPercentage}% complete</span>
             </div>
           </div>
         )}
@@ -293,7 +275,6 @@ function App() {
 
         {/* Todo List and Priority Board */}
         <TodoList
-          todos={todos}
           filteredTodos={filteredTodos}
           filter={filter}
           setFilter={setFilter}
@@ -334,7 +315,7 @@ function App() {
             className="footer-action-btn"
             onClick={() => setIsBackupOpen(true)}
           >
-            <CloudDownload size={15} aria-hidden="true" />
+            <CloudDownload size={14} aria-hidden="true" />
             Backup & Export
           </button>
           <span className="footer-sep" aria-hidden="true">

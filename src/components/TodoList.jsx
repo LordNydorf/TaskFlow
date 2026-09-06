@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   Trash2,
   Plus,
-  Trophy,
   Flame,
   Zap,
   Leaf,
@@ -56,14 +55,21 @@ export default function TodoList({
     filteredTodos.length > 0 && filteredTodos.every((t) => t.completed);
 
   // Split tasks by priority for the 3-column Board view
-  const highTodos = filteredTodos.filter((t) => (t.priority || "medium") === "high");
-  const mediumTodos = filteredTodos.filter((t) => (t.priority || "medium") === "medium");
-  const lowTodos = filteredTodos.filter((t) => (t.priority || "medium") === "low");
+  const highTodos = filteredTodos.filter(
+    (t) => (t.priority || "medium") === "high"
+  );
+  const mediumTodos = filteredTodos.filter(
+    (t) => (t.priority || "medium") === "medium"
+  );
+  const lowTodos = filteredTodos.filter(
+    (t) => (t.priority || "medium") === "low"
+  );
 
   const priorityColumns = [
     {
       id: "high",
-      label: "High",
+      label: "High Priority",
+      shortLabel: "High",
       icon: Flame,
       items: highTodos,
       colorVar: "var(--priority-high)",
@@ -72,7 +78,8 @@ export default function TodoList({
     },
     {
       id: "medium",
-      label: "Medium",
+      label: "Medium Priority",
+      shortLabel: "Medium",
       icon: Zap,
       items: mediumTodos,
       colorVar: "var(--priority-medium)",
@@ -81,7 +88,8 @@ export default function TodoList({
     },
     {
       id: "low",
-      label: "Low",
+      label: "Low Priority",
+      shortLabel: "Low",
       icon: Leaf,
       items: lowTodos,
       colorVar: "var(--priority-low)",
@@ -126,7 +134,7 @@ export default function TodoList({
   };
 
   return (
-    <section aria-label="Task Management and Board">
+    <section aria-label="Task Management and Board" className="tasks-board-section">
       {/* Live Region for Screen Readers */}
       <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {searchQuery
@@ -138,12 +146,12 @@ export default function TodoList({
             } in ${viewMode} view`}
       </div>
 
-      {/* Toolbar: Search, Filters, Sort, View Switcher */}
+      {/* Unified Compact Control Strip */}
       {totalCount > 0 && (
-        <div className="toolbar-section">
-          {/* Search Box */}
+        <div className="unified-toolbar">
+          {/* Left: Search Bar */}
           <div className="search-input-wrapper">
-            <Search className="search-icon" size={17} aria-hidden="true" />
+            <Search className="search-icon" size={16} aria-hidden="true" />
             <label htmlFor="task-search-input" className="sr-only">
               Filter tasks by keyword or tag
             </label>
@@ -153,7 +161,7 @@ export default function TodoList({
               className="search-input"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tasks, subtasks, #tags... (Press / to focus)"
+              placeholder="Search tasks, #tags... ( / )"
               aria-label="Search and filter tasks"
             />
             {searchQuery && (
@@ -164,36 +172,14 @@ export default function TodoList({
                 aria-label="Clear search filter"
                 title="Clear search"
               >
-                <X size={15} aria-hidden="true" />
+                <X size={14} aria-hidden="true" />
               </button>
             )}
           </div>
 
-          <div className="toolbar-right-controls">
-            {/* Sort Selector */}
-            <div className="sort-selector-wrapper">
-              <label htmlFor="task-sort-select" className="sr-only">
-                Sort tasks
-              </label>
-              <div className="sort-select-inner">
-                <ArrowUpDown size={14} className="sort-icon" aria-hidden="true" />
-                <select
-                  id="task-sort-select"
-                  className="sort-select"
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  aria-label="Sort tasks by criteria"
-                >
-                  <option value="default">Default Order</option>
-                  <option value="dueDate">Due Date</option>
-                  <option value="priority">Priority (High to Low)</option>
-                  <option value="created">Recently Created</option>
-                  <option value="alpha">Alphabetical</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Filter Tabs */}
+          {/* Center/Right: Filter Pills, Tags, Sort, View Toggle */}
+          <div className="toolbar-actions-cluster">
+            {/* Filter Pills */}
             <div
               className="filter-pills-group"
               role="tablist"
@@ -236,7 +222,43 @@ export default function TodoList({
               </button>
             </div>
 
-            {/* View Mode Switcher (Board vs List) */}
+            {/* Tag Filter Chips (if tags exist) */}
+            {allTags.length > 0 && (
+              <div className="inline-tags-group">
+                <TagIcon size={12} className="inline-tag-icon" aria-hidden="true" />
+                {allTags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    className={`inline-tag-pill ${selectedTag === tag ? "active" : ""}`}
+                    onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                    title={`Filter by #${tag}`}
+                  >
+                    #{tag}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Sort Selector */}
+            <div className="sort-select-inner">
+              <ArrowUpDown size={13} className="sort-icon" aria-hidden="true" />
+              <select
+                id="task-sort-select"
+                className="sort-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                aria-label="Sort tasks by criteria"
+              >
+                <option value="default">Default</option>
+                <option value="dueDate">Due Date</option>
+                <option value="priority">Priority</option>
+                <option value="created">Recent</option>
+                <option value="alpha">A-Z</option>
+              </select>
+            </div>
+
+            {/* View Mode Toggle (Board vs List) */}
             <div
               className="view-mode-toggle"
               role="radiogroup"
@@ -250,10 +272,10 @@ export default function TodoList({
                   viewMode === "board" ? "active" : ""
                 }`}
                 onClick={() => setViewMode("board")}
-                title="Board View (Kanban 3-Columns)"
-                aria-label="Board View (Kanban 3-Columns)"
+                title="Board View (Kanban)"
+                aria-label="Board View (Kanban)"
               >
-                <Columns3 size={15} aria-hidden="true" />
+                <Columns3 size={14} aria-hidden="true" />
                 <span className="view-toggle-label">Board</span>
               </button>
               <button
@@ -264,105 +286,58 @@ export default function TodoList({
                   viewMode === "list" ? "active" : ""
                 }`}
                 onClick={() => setViewMode("list")}
-                title="List View (Single Feed)"
-                aria-label="List View (Single Feed)"
+                title="List View"
+                aria-label="List View"
               >
-                <ListTodo size={15} aria-hidden="true" />
+                <ListTodo size={14} aria-hidden="true" />
                 <span className="view-toggle-label">List</span>
               </button>
+            </div>
+
+            {/* Bulk Quick Actions */}
+            <div className="bulk-quick-actions">
+              <button
+                type="button"
+                className="bulk-quick-btn"
+                onClick={() => onToggleAll(filteredTodos)}
+                title={allFilteredCompleted ? "Reset all tasks" : "Complete all tasks"}
+                aria-label={allFilteredCompleted ? "Reset all" : "Complete all"}
+              >
+                <CheckCircle2 size={14} aria-hidden="true" />
+              </button>
+
+              {completedCount > 0 && (
+                <button
+                  type="button"
+                  className="bulk-quick-btn danger"
+                  onClick={onClearCompleted}
+                  title={`Clear ${completedCount} completed tasks`}
+                  aria-label={`Clear ${completedCount} completed tasks`}
+                >
+                  <Trash2 size={14} aria-hidden="true" />
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Tag Filters Bar */}
-      {allTags.length > 0 && (
-        <div className="tag-filter-bar" aria-label="Filter tasks by tag">
-          <div className="tag-filter-label">
-            <TagIcon size={12} aria-hidden="true" />
-            <span>Tags:</span>
-          </div>
-          <div className="tag-filter-list">
-            <button
-              type="button"
-              className={`tag-filter-pill ${selectedTag === null ? "active" : ""}`}
-              onClick={() => setSelectedTag(null)}
-            >
-              All Tags
-            </button>
-            {allTags.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                className={`tag-filter-pill ${selectedTag === tag ? "active" : ""}`}
-                onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-              >
-                #{tag}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Bulk Actions Bar */}
-      {totalCount > 0 && (
-        <div className="bulk-actions-bar">
-          <span className="bulk-actions-status">
-            {activeCount === 0 ? (
-              <>
-                <Trophy
-                  size={16}
-                  style={{ color: "var(--accent-emerald)", marginRight: "6px" }}
-                  aria-hidden="true"
-                />
-                All tasks finished!
-              </>
-            ) : (
-              `${activeCount} task${activeCount === 1 ? "" : "s"} remaining`
-            )}
+      {/* Active Filter Banner (Only shown if filtering by tag or search) */}
+      {(selectedTag || searchQuery) && (
+        <div className="active-filter-indicator">
+          <span>
+            Filtering by: {searchQuery && `"${searchQuery}"`} {selectedTag && `#${selectedTag}`} ({filteredTodos.length} results)
           </span>
-
-          <div className="bulk-actions-buttons">
-            <button
-              type="button"
-              className="bulk-action-btn"
-              onClick={() => onToggleAll(filteredTodos)}
-              title={
-                allFilteredCompleted
-                  ? "Mark visible tasks as active"
-                  : "Mark visible tasks as completed"
-              }
-              aria-label={
-                allFilteredCompleted
-                  ? "Mark visible tasks as active"
-                  : "Mark visible tasks as completed"
-              }
-            >
-              <CheckCircle2 size={15} aria-hidden="true" />
-              <span>
-                {allFilteredCompleted
-                  ? searchQuery || selectedTag
-                    ? "Reset Visible"
-                    : "Reset All"
-                  : searchQuery || selectedTag
-                  ? "Complete Visible"
-                  : "Complete All"}
-              </span>
-            </button>
-
-            {completedCount > 0 && (
-              <button
-                type="button"
-                className="bulk-action-btn danger"
-                onClick={onClearCompleted}
-                title="Remove all completed tasks"
-                aria-label={`Clear all ${completedCount} completed tasks`}
-              >
-                <Trash2 size={15} aria-hidden="true" />
-                <span>Clear Done ({completedCount})</span>
-              </button>
-            )}
-          </div>
+          <button
+            type="button"
+            className="filter-reset-link"
+            onClick={() => {
+              setSearchQuery("");
+              setSelectedTag(null);
+            }}
+          >
+            Clear filters
+          </button>
         </div>
       )}
 
@@ -387,13 +362,13 @@ export default function TodoList({
                     onDragOver={(e) => handleDragOverColumn(e, col.id)}
                     onDragLeave={(e) => handleDragLeaveColumn(e, col.id)}
                     onDrop={(e) => handleDropOnColumn(e, col.id)}
-                    aria-label={`${col.label} Priority column with ${col.items.length} tasks`}
+                    aria-label={`${col.label} column with ${col.items.length} tasks`}
                   >
                     {/* Column Header */}
                     <div className="column-header">
                       <div className="column-title-group">
                         <ColIcon
-                          size={16}
+                          size={15}
                           style={{ color: col.colorVar }}
                           aria-hidden="true"
                         />
@@ -407,10 +382,10 @@ export default function TodoList({
                         type="button"
                         className="column-quick-add-btn"
                         onClick={() => onQuickAddPriority(col.id)}
-                        title={`Add new ${col.label} priority task`}
-                        aria-label={`Add new ${col.label} priority task`}
+                        title={`Add new ${col.shortLabel} priority task`}
+                        aria-label={`Add new ${col.shortLabel} priority task`}
                       >
-                        <Plus size={15} aria-hidden="true" />
+                        <Plus size={14} aria-hidden="true" />
                       </button>
                     </div>
 
@@ -424,6 +399,7 @@ export default function TodoList({
                           <TodoCard
                             key={todo.id}
                             todo={todo}
+                            viewMode="board"
                             isSelected={selectedTaskId === todo.id}
                             isEditing={editingId === todo.id}
                             onStartEdit={(id) => setEditingId(id)}
@@ -443,15 +419,13 @@ export default function TodoList({
                       </ul>
                     ) : (
                       <div className="column-empty-placeholder">
-                        <span className="column-empty-text">
-                          No {col.label.toLowerCase()} tasks
-                        </span>
+                        <span className="column-empty-text">No tasks</span>
                         <button
                           type="button"
                           className="column-add-empty-btn"
                           onClick={() => onQuickAddPriority(col.id)}
                         >
-                          + Add {col.label} task
+                          + Add task
                         </button>
                       </div>
                     )}
@@ -470,6 +444,7 @@ export default function TodoList({
                 <TodoCard
                   key={todo.id}
                   todo={todo}
+                  viewMode="list"
                   isSelected={selectedTaskId === todo.id}
                   isEditing={editingId === todo.id}
                   onStartEdit={(id) => setEditingId(id)}
@@ -497,11 +472,11 @@ export default function TodoList({
           >
             <div className="empty-state-icon" aria-hidden="true">
               {searchQuery || selectedTag ? (
-                <Search size={36} />
+                <Search size={32} />
               ) : filter === "completed" ? (
-                <CheckCircle2 size={36} />
+                <CheckCircle2 size={32} />
               ) : (
-                <ClipboardList size={36} />
+                <ClipboardList size={32} />
               )}
             </div>
 
@@ -536,8 +511,8 @@ export default function TodoList({
                   setSelectedTag(null);
                 }}
               >
-                <RotateCcw size={14} aria-hidden="true" />
-                <span>Clear filters</span>
+                <RotateCcw size={13} aria-hidden="true" />
+                <span>Reset filters</span>
               </button>
             )}
           </div>
