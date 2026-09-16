@@ -13,6 +13,18 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
+// Helper to sanitize CSV spreadsheet cells against Formula Injection (CWE-1236)
+function sanitizeCsvCell(value) {
+  const str = String(value ?? "");
+  const trimmed = str.trimStart();
+  const escaped = str.replace(/"/g, '""');
+  // Prepend single quote if value begins with formula operators (=, +, -, @, tab, CR)
+  if (/^[=+@\-\t\r]/.test(trimmed)) {
+    return `"'${escaped}"`;
+  }
+  return `"${escaped}"`;
+}
+
 export default function BackupModal({ isOpen, onClose, todos = [], onImportTodos }) {
   const [importStatus, setImportStatus] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -103,16 +115,17 @@ export default function BackupModal({ isOpen, onClose, todos = [], onImportTodos
       ];
       const rows = todos.map((t) => {
         const subtasksStr = (t.subtasks || [])
-          .map((s) => `${s.completed ? "[x]" : "[ ]"} ${s.text}`)
+          .map((s) => `${s.completed ? "[x]" : "[ ]"} ${s.text || ""}`)
           .join(" | ");
+        const tagsStr = (t.tags || []).join(", ");
         return [
-          `"${(t.text || "").replace(/"/g, '""')}"`,
-          t.completed ? "Completed" : "Active",
-          t.priority || "medium",
-          t.dueDate || "None",
-          `"${(t.tags || []).join(", ")}"`,
-          new Date(t.createdAt).toISOString().split("T")[0],
-          `"${subtasksStr.replace(/"/g, '""')}"`,
+          sanitizeCsvCell(t.text),
+          sanitizeCsvCell(t.completed ? "Completed" : "Active"),
+          sanitizeCsvCell(t.priority || "medium"),
+          sanitizeCsvCell(t.dueDate || "None"),
+          sanitizeCsvCell(tagsStr),
+          sanitizeCsvCell(new Date(t.createdAt).toISOString().split("T")[0]),
+          sanitizeCsvCell(subtasksStr),
         ];
       });
 

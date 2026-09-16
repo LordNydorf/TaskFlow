@@ -1,15 +1,16 @@
 import { useState, useCallback, useMemo } from "react";
-import { useLocalStorage } from "./useLocalStorage";
+import { useLocalStorage } from "./useLocalStorage.js";
 
 // Helper to extract #hashtags from text
 export function extractTags(text = "") {
-  const matches = text.match(/#([a-zA-Z0-9_-]+)/g);
+  const str = typeof text === "string" ? text : String(text ?? "");
+  const matches = str.match(/#([a-zA-Z0-9_-]+)/g);
   if (!matches) return [];
   return Array.from(new Set(matches.map((t) => t.substring(1).toLowerCase())));
 }
 
 // Normalize task objects across versions
-export function normalizeTodo(item, index) {
+export function normalizeTodo(item, index = 0) {
   if (typeof item === "string") {
     const text = item;
     const tags = extractTags(text);
@@ -25,24 +26,45 @@ export function normalizeTodo(item, index) {
     };
   }
 
-  const rawText = item.text || "";
-  const existingTags = Array.isArray(item.tags) ? item.tags : [];
+  // Guard against null, undefined, or primitive values
+  if (!item || typeof item !== "object") {
+    return {
+      id: `fallback-${index}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      text: String(item ?? "").trim(),
+      completed: false,
+      priority: "medium",
+      dueDate: null,
+      tags: [],
+      createdAt: Date.now(),
+      subtasks: [],
+    };
+  }
+
+  const rawText = typeof item.text === "string" ? item.text : String(item.text ?? "");
+  const existingTags = Array.isArray(item.tags) ? item.tags.map(String) : [];
   const extracted = extractTags(rawText);
   const combinedTags = Array.from(new Set([...existingTags, ...extracted]));
+  const validPriority = ["low", "medium", "high"].includes(item.priority)
+    ? item.priority
+    : "medium";
 
   return {
-    id: item.id || `todo-${index}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    id: typeof item.id === "string" && item.id.trim()
+      ? item.id
+      : `todo-${index}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
     text: rawText,
     completed: Boolean(item.completed),
-    priority: item.priority || "medium",
-    dueDate: item.dueDate || null,
+    priority: validPriority,
+    dueDate: typeof item.dueDate === "string" ? item.dueDate : null,
     tags: combinedTags,
-    createdAt: item.createdAt || Date.now(),
+    createdAt: typeof item.createdAt === "number" && !Number.isNaN(item.createdAt)
+      ? item.createdAt
+      : Date.now(),
     subtasks: Array.isArray(item.subtasks)
       ? item.subtasks.map((s, sIdx) => ({
-          id: s.id || `sub-${sIdx}-${Date.now()}`,
-          text: s.text || "",
-          completed: Boolean(s.completed),
+          id: s && typeof s.id === "string" ? s.id : `sub-${sIdx}-${Date.now()}`,
+          text: s && typeof s.text === "string" ? s.text : String(s?.text ?? ""),
+          completed: Boolean(s?.completed),
         }))
       : [],
   };
